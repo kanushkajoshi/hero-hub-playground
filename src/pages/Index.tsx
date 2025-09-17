@@ -58,7 +58,7 @@ const Index = () => {
           <div className="flex gap-4 justify-center flex-wrap">
             <Button 
               size="lg" 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/student-dashboard')}
               className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-4 animate-float"
             >
               <Star className="w-5 h-5 mr-2" />
@@ -114,7 +114,7 @@ const Index = () => {
           </p>
           <Button 
             size="lg"
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/student-dashboard')}
             className="bg-gradient-primary text-lg px-8 py-4 shine"
           >
             <Shield className="w-5 h-5 mr-2" />
