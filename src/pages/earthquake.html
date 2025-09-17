@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏢 Earthquake Escape</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+        
+        .game-container {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .game-header {
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .game-title {
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+        
+        .game-stats {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .stat-item {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        
+        .building-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #87ceeb 0%, #98fb98 100%);
+            perspective: 1000px;
+        }
+        
+        .shake-effect {
+            animation: buildingShake 0.1s infinite;
+        }
+
+        .parallax-bg {
+            position: absolute;
+            width: 120%;
+            height: 120%;
+            top: -10%;
+            left: -10%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23ffffff10" x="0" y="0" width="50" height="50"/></svg>');
+            background-size: 30px 30px;
+            transform-style: preserve-3d;
+            transform: translateZ(-10px);
+            animation: parallaxMove 20s infinite linear;
+        }
+        
+        @keyframes buildingShake {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(-2px, -1px) rotate(-0.3deg); }
+            50% { transform: translate(2px, 1px) rotate(0.3deg); }
+            75% { transform: translate(-1px, 2px) rotate(-0.2deg); }
+        }
+        
+        .building {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: #d3d3d3;
+            border: 3px solid #8b8b8b;
+        }
+        
+        .floor {
+            position: absolute;
+            width: 100%;
+            height: 20%;
+            border-bottom: 2px solid #8b8b8b;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 0 100px;
+        }
+        
+        .floor-3 { top: 0%; background: #ffe6e6; }
+        .floor-2 { top: 20%; background: #e6f3ff; }
+        .floor-1 { top: 40%; background: #e6ffe6; }
+        .floor-0 { top: 60%; background: #fff9e6; }
+        .ground { top: 80%; background: #90EE90; border: none; }
+        
+        .room {
+            width: 150px;
+            height: 80px;
+            border: 2px solid #666;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .room:hover {
+            transform: scale(1.05) translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            animation: roomPulse 1s infinite;
+        }
+
+        @keyframes roomPulse {
+            0% { box-shadow: 0 8px 25px rgba(0,0,0,0.2); }
+            50% { box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+            100% { box-shadow: 0 8px 25px rgba(0,0,0,0.2); }
+        }
+        
+        .safe-room {
+            background: #90EE90;
+            border-color: #228B22;
+        }
+        
+        .danger-room {
+            background: #FFB6C1;
+            border-color: #DC143C;
+        }
+        
+        .neutral-room {
+            background: #E6E6FA;
+            border-color: #9370DB;
+        }
+        
+        .elevator {
+            width: 80px;
+            height: 100%;
+            position: absolute;
+            left: 10px;
+            top: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: bold;
+            z-index: 20;
+            background: #C0C0C0;
+            border: 3px solid #808080;
+            border-radius: 8px;
+        }
+        
+        .elevator:hover {
+            background: #ff6b6b;
+            color: white;
+            transform: scale(1.02);
+        }
+        
+        .stairs {
+            width: 80px;
+            height: 100%;
+            background: #D2B48C;
+            border: 3px solid #8B4513;
+            border-radius: 8px;
+            position: absolute;
+            right: 10px;
+            top: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: bold;
+            z-index: 20;
+        }
+        
+        .stairs:hover {
+            background: #90EE90;
+            border-color: #228B22;
+            transform: scale(1.02);
+        }
+        
+        .room {
+            width: 130px;
+            height: 70px;
+            border: 2px solid #666;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            margin: 0 10px;
+        }
+        
+        .floor-number {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 5px;
+            background: #2c3e50;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.2em;
+            z-index: 10;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .exit-door {
+            width: 100px;
+            height: 60px;
+            background: #32CD32;
+            border: 3px solid #228B22;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            animation: exitGlow 2s infinite;
+        }
+        
+        @keyframes exitGlow {
+            0%, 100% { box-shadow: 0 0 20px #32CD32; }
+            50% { box-shadow: 0 0 30px #32CD32, 0 0 40px #32CD32; }
+        }
+        
+        .player {
+            width: 40px;
+            height: 40px;
+            background: #ff6b6b;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            z-index: 100;
+            transition: all 0.5s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .hazard {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: #ff4757;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: hazardPulse 1s infinite;
+            z-index: 50;
+            box-shadow: 0 0 20px rgba(255, 71, 87, 0.4);
+        }
+        
+        @keyframes hazardPulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 20px rgba(255, 71, 87, 0.4); }
+            50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 30px rgba(255, 71, 87, 0.6); }
+        }
+
+        .safe-zone-indicator {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0.2;
+            transition: opacity 0.3s;
+        }
+
+        .safe-room .safe-zone-indicator {
+            background: radial-gradient(circle, #32CD32 0%, transparent 70%);
+        }
+
+        .danger-room .safe-zone-indicator {
+            background: radial-gradient(circle, #ff4757 0%, transparent 70%);
+        }
+        
+        .instructions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 600px;
+            z-index: 1000;
+        }
+        
+        .btn {
+            background: #32CD32;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #228B22;
+            transform: translateY(-2px);
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .success {
+            background: linear-gradient(45deg, #32CD32, #90EE90);
+        }
+        
+        .failure {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+        }
+        
+        .timer {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .timer.warning {
+            color: #ff6b6b;
+            animation: timerBlink 1s infinite;
+        }
+        
+        @keyframes timerBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .tips {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 300px;
+            font-size: 0.9em;
+        }
+        
+        @media (max-width: 768px) {
+            .game-title { font-size: 1.4em; }
+            .room { width: 120px; height: 60px; font-size: 0.8em; }
+            .instructions { padding: 20px; font-size: 0.9em; }
+            .tips { bottom: 10px; left: 10px; padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <div class="game-title">🏢 Earthquake Escape</div>
+            <div class="game-stats">
+                <div class="stat-item">Floor: <span id="currentFloor">4</span></div>
+                <div class="stat-item">Lives: <span id="lives">❤️❤️❤️</span></div>
+                <div class="stat-item timer" id="timer">Time: 60s</div>
+            </div>
+        </div>
+        
+        <div class="building-container shake-effect" id="buildingContainer">
+            <div class="parallax-bg"></div>
+            <div class="building" id="building">
+                <!-- Floor 4 (Top) -->
+                <div class="floor floor-3" id="floor-3">
+                    <div class="floor-number">FLOOR 4</div>
+                    <div class="room danger-room" onclick="enterRoom('library', false)">
+                    <div class="safe-zone-indicator"></div>
+                    📚 Library
+                </div>
+                    <div class="room neutral-room" onclick="enterRoom('office', true)">🏢 Office</div>
+                    <div class="room danger-room" onclick="enterRoom('conference', false)">🪑 Conference</div>
+                </div>
+                
+                <!-- Floor 3 -->
+                <div class="floor floor-2" id="floor-2">
+                    <div class="floor-number">FLOOR 3</div>
+                    <div class="room safe-room" onclick="enterRoom('bathroom', true)">🚻 Bathroom</div>
+                    <div class="room danger-room" onclick="enterRoom('kitchen', false)">🍳 Kitchen</div>
+                    <div class="room neutral-room" onclick="enterRoom('storage', true)">📦 Storage</div>
+                </div>
+                
+                <!-- Floor 2 -->
+                <div class="floor floor-1" id="floor-1">
+                    <div class="floor-number">FLOOR 2</div>
+                    <div class="room neutral-room" onclick="enterRoom('classroom', true)">🎓 Classroom</div>
+                    <div class="room danger-room" onclick="enterRoom('lab', false)">🧪 Science Lab</div>
+                    <div class="room safe-room" onclick="enterRoom('nurse', true)">🏥 Nurse Office</div>
+                </div>
+                
+                <!-- Floor 1 -->
+                <div class="floor floor-0" id="floor-0">
+                    <div class="floor-number">FLOOR 1</div>
+                    <div class="room safe-room" onclick="enterRoom('lobby', true)">🏛️ Lobby</div>
+                    <div class="room danger-room" onclick="enterRoom('cafeteria', false)">🍽️ Cafeteria</div>
+                    <div class="room neutral-room" onclick="enterRoom('gym', true)">🏃‍♂️ Gym</div>
+                </div>
+                
+                <!-- Ground Floor -->
+                <div class="floor ground" id="ground">
+                    <div class="floor-number">GROUND</div>
+                    <div class="exit-door" onclick="exitBuilding()">🚪 SAFE EXIT</div>
+                </div>
+                
+                <!-- Elevator (Dangerous) -->
+                <div class="elevator" onclick="useElevator()">
+                    🛗<br>ELEVATOR<br>(DON'T USE!)
+                </div>
+                
+                <!-- Stairs (Safe) -->
+                <div class="stairs" onclick="useStairs()">
+                    🪜<br>EMERGENCY<br>STAIRS
+                </div>
+                
+                <!-- Player -->
+                <div class="player" id="player" style="left: 400px; top: 15%;">😊</div>
+                
+                <!-- Hazards -->
+                <div class="hazard" style="left: 200px; top: 25%;">💥</div>
+                <div class="hazard" style="left: 600px; top: 45%;">🔥</div>
+                <div class="hazard" style="left: 300px; top: 65%;">⚡</div>
+            </div>
+        </div>
+        
+        <div class="instructions" id="instructions">
+            <h2>🚨 EARTHQUAKE EMERGENCY! 🚨</h2>
+            <p>A powerful earthquake has hit the building! You're on the 4th floor and need to escape safely.</p>
+            <br>
+            <p><strong>🎯 Your Mission:</strong></p>
+            <p>• Navigate through the shaking building</p>
+            <p>• Avoid dangerous areas (red rooms)</p>
+            <p>• Use stairs, NOT elevators!</p>
+            <p>• Reach the ground floor exit</p>
+            <p>• Watch out for falling debris! 💥</p>
+            <br>
+            <button class="btn" onclick="startGame()">🏃‍♂️ START ESCAPE!</button>
+        </div>
+        
+        <div class="game-over" id="gameOver">
+            <h2 id="gameOverTitle">Game Over!</h2>
+            <p id="gameOverMessage"></p>
+            <button class="btn" onclick="restartGame()">🔄 Try Again</button>
+            <button class="btn" onclick="showInstructions()">📖 Instructions</button>
+        </div>
+        
+        <div class="tips">
+            <strong>🛡️ Safety Tips:</strong><br>
+            • Green rooms are safer<br>
+            • Red rooms have hazards<br>
+            • Always use stairs during earthquakes<br>
+            • Move quickly but carefully!
+        </div>
+    </div>
+
+    <script>
+        let gameState = {
+            currentFloor: 4,
+            lives: 3,
+            timeLeft: 60,
+            gameRunning: false,
+            playerPosition: { x: 400, y: 15 }
+        };
+        
+        let gameTimer;
+        let shakeInterval;
+        
+        const roomSafety = {
+            library: { safe: false, message: "📚 Books are falling! You got hurt by falling objects!" },
+            office: { safe: true, message: "🏢 You found a sturdy desk to hide under!" },
+            conference: { safe: false, message: "🪑 The heavy table collapsed! Not safe!" },
+            bathroom: { safe: true, message: "🚻 Good choice! Bathrooms have strong walls!" },
+            kitchen: { safe: false, message: "🍳 Hot oil and sharp objects flying everywhere!" },
+            storage: { safe: true, message: "📦 Boxes cushioned your fall - relatively safe!" },
+            classroom: { safe: true, message: "🎓 You hid under a desk - smart move!" },
+            lab: { safe: false, message: "🧪 Dangerous chemicals spilled everywhere!" },
+            nurse: { safe: true, message: "🏥 Medical supplies and sturdy furniture helped!" },
+            lobby: { safe: true, message: "🏛️ Open space with good visibility - safe choice!" },
+            cafeteria: { safe: false, message: "🍽️ Tables and chairs flying around - dangerous!" },
+            gym: { safe: true, message: "🏃‍♂️ Open space helped you avoid falling objects!" }
+        };
+        
+        function startGame() {
+            document.getElementById('instructions').style.display = 'none';
+            gameState.gameRunning = true;
+            startTimer();
+            startShakeEffect();
+            updateDisplay();
+        }
+        
+        function startTimer() {
+            gameTimer = setInterval(() => {
+                gameState.timeLeft--;
+                updateTimer();
+                
+                if (gameState.timeLeft <= 0) {
+                    endGame(false, "⏰ Time's up! The building collapsed!");
+                }
+            }, 1000);
+        }
+        
+        function updateTimer() {
+            const timerElement = document.getElementById('timer');
+            timerElement.textContent = `Time: ${gameState.timeLeft}s`;
+            
+            if (gameState.timeLeft <= 10) {
+                timerElement.classList.add('warning');
+            }
+        }
+        
+        function startShakeEffect() {
+            // Random shake intensity
+            shakeInterval = setInterval(() => {
+                const container = document.getElementById('buildingContainer');
+                if (Math.random() > 0.7) {
+                    container.classList.add('shake-effect');
+                    setTimeout(() => {
+                        container.classList.remove('shake-effect');
+                    }, 200);
+                }
+            }, 1000);
+        }
+        
+        function enterRoom(roomType, moveToRoom) {
+            if (!gameState.gameRunning) return;
+            
+            const room = roomSafety[roomType];
+            const player = document.getElementById('player');
+            
+            // Move player to room (visual feedback)
+            if (moveToRoom) {
+                animatePlayerMovement();
+            }
+            
+            if (!room.safe) {
+                gameState.lives--;
+                updateDisplay();
+                showFeedback(room.message, 'danger');
+                
+                if (gameState.lives <= 0) {
+                    endGame(false, "💔 You ran out of lives! Stay safe during earthquakes!");
+                    return;
+                }
+            } else {
+                showFeedback(room.message, 'safe');
+            }
+        }
+        
+        function useElevator() {
+            if (!gameState.gameRunning) return;
+            
+            gameState.lives--;
+            updateDisplay();
+            showFeedback("🛗 NEVER use elevators during earthquakes! They can get stuck or fall!", 'danger');
+            
+            if (gameState.lives <= 0) {
+                endGame(false, "🛗 The elevator got stuck! Always use stairs during emergencies!");
+            }
+        }
+        
+        function useStairs() {
+            if (!gameState.gameRunning) return;
+            
+            if (gameState.currentFloor > 1) {
+                gameState.currentFloor--;
+                movePlayerDown();
+                updateDisplay();
+                showFeedback("🪜 Great choice! Stairs are safe during earthquakes!", 'safe');
+                
+                // Add time bonus for using stairs
+                gameState.timeLeft += 5;
+            }
+        }
+        
+        function exitBuilding() {
+            if (!gameState.gameRunning) return;
+            if (gameState.currentFloor > 1) {
+                showFeedback("You need to go down to the ground floor first!", 'warning');
+                return;
+            }
+            
+            endGame(true, `🎉 CONGRATULATIONS! You escaped safely with ${gameState.lives} lives remaining!`);
+        }
+        
+        function movePlayerDown() {
+            const player = document.getElementById('player');
+            const currentTop = parseInt(player.style.top) || 15;
+            const newTop = Math.min(currentTop + 20, 75);
+            
+            player.style.transition = 'all 0.8s ease';
+            player.style.top = newTop + '%';
+            
+            setTimeout(() => {
+                player.style.transition = 'all 0.5s ease';
+            }, 800);
+        }
+        
+        function animatePlayerMovement() {
+            const player = document.getElementById('player');
+            const originalTransform = player.style.transform;
+            
+            player.style.transform = 'scale(1.2) rotate(10deg)';
+            player.innerHTML = '🏃‍♂️';
+            
+            setTimeout(() => {
+                player.style.transform = originalTransform;
+                player.innerHTML = '😊';
+            }, 500);
+        }
+        
+        function showFeedback(message, type) {
+            // Create feedback popup
+            const feedback = document.createElement('div');
+            feedback.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                padding: 15px 25px;
+                border-radius: 10px;
+                font-weight: bold;
+                font-size: 1.1em;
+                z-index: 1001;
+                max-width: 80%;
+                text-align: center;
+                animation: slideDown 0.5s ease;
+            `;
+            
+            if (type === 'safe') {
+                feedback.style.background = 'linear-gradient(45deg, #32CD32, #90EE90)';
+                feedback.style.color = 'white';
+            } else if (type === 'danger') {
+                feedback.style.background = 'linear-gradient(45deg, #ff6b6b, #ff8e8e)';
+                feedback.style.color = 'white';
+            } else {
+                feedback.style.background = 'linear-gradient(45deg, #ffa500, #ffd700)';
+                feedback.style.color = 'black';
+            }
+            
+            feedback.textContent = message;
+            document.body.appendChild(feedback);
+            
+            setTimeout(() => {
+                feedback.remove();
+            }, 3000);
+        }
+        
+        function updateDisplay() {
+            document.getElementById('currentFloor').textContent = gameState.currentFloor;
+            
+            const heartsArray = Array(gameState.lives).fill('❤️');
+            const emptyHearts = Array(3 - gameState.lives).fill('💔');
+            document.getElementById('lives').textContent = heartsArray.concat(emptyHearts).join('');
+        }
+        
+        function endGame(success, message) {
+            gameState.gameRunning = false;
+            clearInterval(gameTimer);
+            clearInterval(shakeInterval);
+            
+            const gameOver = document.getElementById('gameOver');
+            const title = document.getElementById('gameOverTitle');
+            const messageEl = document.getElementById('gameOverMessage');
+            
+            if (success) {
+                title.textContent = '🎉 MISSION ACCOMPLISHED!';
+                gameOver.className = 'game-over success';
+                
+                // Calculate score
+                const timeBonus = gameState.timeLeft * 10;
+                const lifeBonus = gameState.lives * 50;
+                const totalScore = timeBonus + lifeBonus;
+                
+                messageEl.innerHTML = `
+                    ${message}<br><br>
+                    <strong>📊 Your Score:</strong><br>
+                    Time Bonus: ${timeBonus} points<br>
+                    Life Bonus: ${lifeBonus} points<br>
+                    <strong>Total: ${totalScore} points</strong>
+                `;
+            } else {
+                title.textContent = '💔 Mission Failed';
+                gameOver.className = 'game-over failure';
+                messageEl.innerHTML = `
+                    ${message}<br><br>
+                    <strong>💡 Remember:</strong><br>
+                    • Use stairs, never elevators<br>
+                    • Avoid dangerous areas<br>
+                    • Move quickly but safely!
+                `;
+            }
+            
+            gameOver.style.display = 'block';
+        }
+        
+        function restartGame() {
+            // Reset game state
+            gameState = {
+                currentFloor: 4,
+                lives: 3,
+                timeLeft: 60,
+                gameRunning: false,
+                playerPosition: { x: 400, y: 15 }
+            };
+            
+            // Reset player position
+            const player = document.getElementById('player');
+            player.style.left = '400px';
+            player.style.top = '15%';
+            player.innerHTML = '😊';
+            
+            // Reset timer display
+            const timerElement = document.getElementById('timer');
+            timerElement.classList.remove('warning');
+            
+            // Hide game over screen
+            document.getElementById('gameOver').style.display = 'none';
+            
+            updateDisplay();
+            startGame();
+        }
+        
+        function showInstructions() {
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('instructions').style.display = 'block';
+        }
+        
+        // Add CSS for slide down animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideDown {
+                from {
+                    transform: translate(-50%, -100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translate(-50%, 0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Initialize display
+        updateDisplay();
+    </script>
+</body>
+</html>

@@ -95,8 +95,14 @@ const GamesInterface: React.FC = () => {
   };
 
   const handlePlayGame = (gameId: number) => {
-    // For now, just show an alert - in real app would navigate to actual game
-    alert(`Starting ${games.find(g => g.id === gameId)?.title}! 🎮`);
+    const game = games.find(g => g.id === gameId);
+    if (game?.title === "Earthquake Escape") {
+      window.open('src/pages/earthquake.html', '_blank');
+    } else if (game?.title === "Safety Kit Collector") {
+      window.open('src/pages/safetykit.html', '_blank');
+    } else {
+      alert(`Starting ${game?.title}! 🎮`);
+    }
   };
 
   return (

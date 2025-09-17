@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Safety Kit Collector</title>
+  <!-- TailwindCSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Phaser.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.70.0/phaser.min.js"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-400 to-blue-600 p-4 flex items-center justify-center">
+
+  <!-- Start Screen -->
+  <div id="start-screen" class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full text-center">
+    <h1 class="text-3xl font-bold text-gray-800 mb-4">Safety Kit Collector</h1>
+    <p class="text-gray-600 mb-6">
+      Drag and drop essential items to build the perfect emergency kit! 
+      Learn about disaster preparedness while having fun.
+    </p>
+    <div class="space-y-2 text-sm text-gray-500 mb-6">
+      <p>🎯 <strong>Goal:</strong> Collect as many emergency items as possible</p>
+      <p>⏱️ <strong>Time:</strong> 1 minute</p>
+      <p>🎮 <strong>How to play:</strong> Drag items to the backpack</p>
+    </div>
+    <button id="start-btn" 
+      class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200">
+      Start Game
+    </button>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" class="hidden w-full">
+    <div class="max-w-7xl mx-auto flex gap-4">
+      <!-- Left Sidebar -->
+      <div class="w-64 flex-shrink-0">
+        <div class="bg-white rounded-lg shadow-lg p-4 sticky top-4">
+          <h3 class="font-bold text-gray-800 mb-3">Emergency Kit Categories:</h3>
+          <div class="grid grid-cols-1 gap-3 text-sm">
+            <div class="flex items-center"><span class="w-4 h-4 bg-green-500 rounded mr-2"></span><span>Survival</span></div>
+            <div class="flex items-center"><span class="w-4 h-4 bg-red-500 rounded mr-2"></span><span>Medical</span></div>
+            <div class="flex items-center"><span class="w-4 h-4 bg-yellow-500 rounded mr-2"></span><span>Tools</span></div>
+            <div class="flex items-center"><span class="w-4 h-4 bg-purple-500 rounded mr-2"></span><span>Communication</span></div>
+            <div class="flex items-center"><span class="w-4 h-4 bg-gray-500 rounded mr-2"></span><span>Shelter</span></div>
+            <div class="flex items-center"><span class="w-4 h-4 bg-orange-500 rounded mr-2"></span><span>Resources</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="flex-1">
+        <div class="bg-white rounded-lg shadow-lg p-4 mb-4 flex justify-between items-center">
+          <div class="flex space-x-6">
+            <div class="text-center">
+              <div id="score" class="text-2xl font-bold text-gray-800">0</div>
+              <div class="text-sm text-gray-600">Score</div>
+            </div>
+            <div class="text-center">
+              <div id="timer" class="text-2xl font-bold text-gray-800">3:00</div>
+              <div class="text-sm text-gray-600">Time Left</div>
+            </div>
+            <div class="text-center">
+              <div id="collectedCount" class="text-2xl font-bold text-gray-800">0</div>
+              <div class="text-sm text-gray-600">Items Collected</div>
+            </div>
+          </div>
+          <button id="reset-btn"
+            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+            Reset
+          </button>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-4 mb-4">
+          <div class="text-center mb-4">
+            <p class="text-gray-700">
+              <strong>Instructions:</strong> Drag emergency items to the backpack to collect them!
+            </p>
+          </div>
+          <div id="game-container" class="flex justify-center"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Complete Screen -->
+  <div id="end-screen" class="hidden bg-white rounded-xl shadow-2xl p-8 max-w-lg w-full text-center">
+    <h2 class="text-3xl font-bold text-gray-800 mb-4">Game Complete!</h2>
+    <div class="text-6xl mb-4">🎒</div>
+    <p class="text-xl text-gray-700 mb-4">Final Score: <strong id="final-score"></strong></p>
+    <p class="text-lg text-gray-600 mb-6">You collected <span id="final-collected"></span> items!</p>
+    
+    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+      <h3 class="font-bold text-gray-800 mb-2">Items Collected:</h3>
+      <div id="collected-list" class="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto"></div>
+    </div>
+
+    <p id="message" class="font-bold mb-6"></p>
+
+    <button id="play-again-btn"
+      class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200">
+      Play Again
+    </button>
+  </div>
+
+<script>
+  // Game State
+  let score = 0;
+  let timeLeft = 60;
+  let collectedItems = [];
+  let timerInterval;
+  let phaserGame;
+
+  const essentialItems = [
+    { name: 'Water Bottle', category: 'survival', points: 20 },
+    { name: 'First Aid Kit', category: 'medical', points: 25 },
+    { name: 'Flashlight', category: 'tools', points: 15 },
+    { name: 'Battery Radio', category: 'communication', points: 20 },
+    { name: 'Non-perishable Food', category: 'survival', points: 20 },
+    { name: 'Emergency Blanket', category: 'shelter', points: 15 },
+    { name: 'Whistle', category: 'communication', points: 10 },
+    { name: 'Matches/Lighter', category: 'tools', points: 15 },
+    { name: 'Cash', category: 'resources', points: 10 },
+    { name: 'Important Documents', category: 'resources', points: 25 },
+    { name: 'Medications', category: 'medical', points: 20 },
+    { name: 'Multi-tool', category: 'tools', points: 15 }
+  ];
+
+  // UI DOM references
+  const startScreen = document.getElementById('start-screen');
+  const gameScreen = document.getElementById('game-screen');
+  const endScreen = document.getElementById('end-screen');
+  const scoreEl = document.getElementById('score');
+  const timerEl = document.getElementById('timer');
+  const collectedCountEl = document.getElementById('collectedCount');
+
+  function formatTime(seconds) {
+    const minutes = Math.floor(seconds/60);
+    const sec = seconds % 60;
+    return `${minutes}:${sec.toString().padStart(2,'0')}`;
+  }
+  function getCategoryColor(category) {
+    const colors = {
+      survival: 'bg-green-500',
+      medical: 'bg-red-500',
+      tools: 'bg-yellow-500',
+      communication: 'bg-purple-500',
+      shelter: 'bg-gray-500',
+      resources: 'bg-orange-500'
+    };
+    return colors[category] || 'bg-blue-500';
+  }
+
+  function startGame() {
+    startScreen.classList.add('hidden');
+    gameScreen.classList.remove('hidden');
+    endScreen.classList.add('hidden');
+    score = 0;
+    timeLeft = 60;
+    collectedItems = [];
+    scoreEl.textContent = 0;
+    timerEl.textContent = formatTime(timeLeft);
+    collectedCountEl.textContent = 0;
+
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      timerEl.textContent = formatTime(timeLeft);
+      if (timeLeft <= 0) endGame();
+    }, 1000);
+
+    initPhaser();
+  }
+
+  function resetGame() {
+    if (phaserGame) {
+      phaserGame.destroy(true);
+      phaserGame = null;
+    }
+    clearInterval(timerInterval);
+    gameScreen.classList.add('hidden');
+    startScreen.classList.remove('hidden');
+  }
+
+  function endGame() {
+    clearInterval(timerInterval);
+    gameScreen.classList.add('hidden');
+    endScreen.classList.remove('hidden');
+    document.getElementById('final-score').textContent = score + " points";
+    document.getElementById('final-collected').textContent = collectedItems.length;
+
+    let collectedList = document.getElementById('collected-list');
+    collectedList.innerHTML = '';
+    collectedItems.forEach(item=>{
+      let div = document.createElement('div');
+      div.className="flex items-center justify-between text-sm";
+      div.innerHTML=`<span class="px-2 py-1 rounded text-white text-xs ${getCategoryColor(item.category)}">${item.category}</span>
+        <span class="flex-1 ml-2 text-left">${item.name}</span>
+        <span class="font-bold">+${item.points}</span>`;
+      collectedList.appendChild(div);
+    });
+
+    const totalPossibleScore = essentialItems.reduce((s,it)=>s+it.points,0);
+    let pct = Math.round((score/totalPossibleScore)*100);
+    let message = document.getElementById('message');
+    if (pct>=80) message.textContent="🌟 Excellent preparedness!";
+    else if(pct>=60) message.textContent="⚡ Good job! Keep learning!";
+    else message.textContent="📚 Practice makes perfect!";
+
+    if (phaserGame) {
+      phaserGame.destroy(true);
+      phaserGame=null;
+    }
+  }
+
+  function initPhaser() {
+    const config = {
+      type: Phaser.AUTO,
+      width: 900,
+      height: 500,
+      parent: 'game-container',
+      backgroundColor: '#87CEEB',
+      physics: { default: 'arcade', arcade: { gravity: { y:0 } } },
+      scene: { preload, create, update }
+    };
+    phaserGame = new Phaser.Game(config);
+    let sceneRef;
+
+    function preload() {
+      this.add.graphics().fillStyle(0x4CAF50).fillRect(0,0,60,40).generateTexture('water',60,40);
+      this.add.graphics().fillStyle(0xF44336).fillRect(0,0,60,40).generateTexture('firstaid',60,40);
+      this.add.graphics().fillStyle(0xFFEB3B).fillRect(0,0,60,40).generateTexture('flashlight',60,40);
+      this.add.graphics().fillStyle(0x9C27B0).fillRect(0,0,60,40).generateTexture('radio',60,40);
+      this.add.graphics().fillStyle(0xFF9800).fillRect(0,0,60,40).generateTexture('food',60,40);
+      this.add.graphics().fillStyle(0x607D8B).fillRect(0,0,60,40).generateTexture('blanket',60,40);
+      this.add.graphics().fillStyle(0x795548).fillRect(0,0,60,40).generateTexture('default',60,40);
+      // Create backpack texture with rounded corners
+      const graphics = this.add.graphics();
+      graphics.fillStyle(0x8B4513);
+      graphics.fillRoundedRect(0, 0, 150, 200, 16);
+      graphics.generateTexture('backpack', 150, 200);
+    }
+    function create() {
+      sceneRef = this;
+      this.add.text(450,30,'Emergency Kit Collector',{fontSize:'24px',fill:'#000'}).setOrigin(0.5);
+      
+      // Add backpack and make it interactive
+      const backpack = this.add.image(750, 250, 'backpack');
+      backpack.setInteractive();
+      
+      // Create drop zone
+      const dropZone = this.add.zone(750, 250, 150, 200).setRectangleDropZone(150, 200);
+      const dropZoneOutline = this.add.graphics();
+      dropZoneOutline.lineStyle(4, 0x00ff00).strokeRect(675, 150, 150, 200).setAlpha(0);
+      let itemsGroup = this.add.group();
+      for(let i=0;i<6;i++){setTimeout(()=>spawnRandomItem.call(this),i*500);}
+      this.input.on('dragenter', function (pointer, gameObject, dropZone) {
+        dropZoneOutline.setAlpha(0.7);
+      });
+      this.input.on('dragleave', function (pointer, gameObject, dropZone) {
+        dropZoneOutline.setAlpha(0);
+      });
+      this.input.on('drop', function (pointer, gameObject, dropZone) {
+        dropZoneOutline.setAlpha(0);
+        collectedItems.push(gameObject.itemData);
+        score += gameObject.itemData.points;
+        scoreEl.textContent = score;
+        collectedCountEl.textContent = collectedItems.length;
+        gameObject.destroy();
+        setTimeout(()=>spawnRandomItem.call(sceneRef),1000);
+      });
+      this.input.on('dragend',(e,obj)=>{if(!obj.dropped){obj.x=obj.input.dragStartX;obj.y=obj.input.dragStartY;}});
+      function spawnRandomItem(){
+        const item=essentialItems[Math.floor(Math.random()*essentialItems.length)];
+        const x=Math.random()*500+50;
+        const y=Math.random()*350+80;
+        const textureMap = {
+          "Water Bottle": "water",
+          "First Aid Kit": "firstaid",
+          "Flashlight": "flashlight",
+          "Battery Radio": "radio",
+          "Non-perishable Food": "food",
+          "Emergency Blanket": "blanket",
+          "Whistle": "default",
+          "Matches/Lighter": "default",
+          "Cash": "default",
+          "Important Documents": "default",
+          "Medications": "default",
+          "Multi-tool": "default"
+        };
+        const texture=textureMap[item.name]||'default';
+        const gameObject=this.add.image(x,y,texture);
+        gameObject.setInteractive({draggable:true});
+        gameObject.itemData=item;
+        const label=this.add.text(x,y+30,item.name,{fontSize:'12px',fill:'#000',backgroundColor:'#fff',padding:{x:4,y:2}}).setOrigin(0.5);
+        gameObject.label=label;
+        this.input.setDraggable(gameObject);
+        gameObject.on('drag',(e,dx,dy)=>{gameObject.x=dx;gameObject.y=dy;label.x=dx;label.y=dy+30;});
+        gameObject.on('drop',()=>{gameObject.dropped=true;label.destroy();});
+        itemsGroup.add(gameObject);
+      }
+    }
+    function update(){}
+  }
+
+  // Event Listeners
+  document.getElementById('start-btn').addEventListener('click', startGame);
+  document.getElementById('reset-btn').addEventListener('click', resetGame);
+  document.getElementById('play-again-btn').addEventListener('click', ()=>{endScreen.classList.add('hidden');startScreen.classList.remove('hidden');});
+</script>
+</body>
+</html>
