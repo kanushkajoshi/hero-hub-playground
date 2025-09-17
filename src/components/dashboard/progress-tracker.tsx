@@ -84,7 +84,7 @@ export const ProgressTracker: React.FC = () => {
         <div className="space-y-3">
           {modules.map((module) => (
             <div key={module.id} className="flex items-center space-x-3 p-3 rounded-lg bg-card hover:bg-muted/30 transition-colors">
-              <div className={`p-2 rounded-full ${
+              <div className={`p-2 rounded-full flex-shrink-0 ${
                 module.color === 'success' ? 'bg-success/20 text-success' :
                 module.color === 'warning' ? 'bg-warning/20 text-warning' :
                 'bg-info/20 text-info'
@@ -92,10 +92,10 @@ export const ProgressTracker: React.FC = () => {
                 {module.icon}
               </div>
               
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                  <h4 className="font-medium">{module.name}</h4>
-                  <span className={`text-xs px-2 py-1 rounded-full ${
+                  <h4 className="font-medium truncate">{module.name}</h4>
+                  <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0 ${
                     module.difficulty === 'Beginner' ? 'bg-success/20 text-success' :
                     module.difficulty === 'Intermediate' ? 'bg-warning/20 text-warning' :
                     'bg-destructive/20 text-destructive'
@@ -112,13 +112,15 @@ export const ProgressTracker: React.FC = () => {
                 />
               </div>
               
-              <Button
-                size="sm"
-                variant={module.completed === module.total ? "secondary" : "default"}
-                className="ml-2"
-              >
-                {module.completed === module.total ? 'Review' : 'Continue'}
-              </Button>
+              <div className="flex-shrink-0 w-20">
+                <Button
+                  size="sm"
+                  variant={module.completed === module.total ? "secondary" : "default"}
+                  className="w-full"
+                >
+                  {module.completed === module.total ? 'Review' : 'Continue'}
+                </Button>
+              </div>
             </div>
           ))}
         </div>
