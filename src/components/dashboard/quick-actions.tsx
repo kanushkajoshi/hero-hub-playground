@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 import { 
   BookOpen, 
   Gamepad2, 
@@ -77,6 +78,7 @@ const quickActions: QuickAction[] = [
 ];
 
 export const QuickActions: React.FC<{ isOffline?: boolean }> = ({ isOffline = false }) => {
+  const navigate = useNavigate();
   return (
     <div className="space-y-6">
       {/* Offline Status */}
@@ -115,10 +117,7 @@ export const QuickActions: React.FC<{ isOffline?: boolean }> = ({ isOffline = fa
               shadow-card hover:shadow-elevated
               shine
             `}
-            onClick={() => {
-              // Handle navigation
-              console.log(`Navigate to ${action.href}`);
-            }}
+            onClick={() => navigate(action.href)}
           >
             <div className="p-3 bg-white/20 rounded-full">
               {action.icon}
@@ -144,9 +143,7 @@ export const QuickActions: React.FC<{ isOffline?: boolean }> = ({ isOffline = fa
                 variant="ghost"
                 size="sm"
                 className="flex flex-col items-center space-y-2 h-auto p-4 hover:bg-muted/50"
-                onClick={() => {
-                  console.log(`Navigate to ${action.href}`);
-                }}
+                onClick={() => navigate(action.href)}
               >
                 <div className={`p-2 rounded-lg ${action.color} text-white`}>
                   {action.icon}
